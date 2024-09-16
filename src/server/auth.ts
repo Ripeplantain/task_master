@@ -6,9 +6,8 @@ import {
   type NextAuthOptions,
 } from "next-auth";
 import { type Adapter } from "next-auth/adapters";
-import DiscordProvider from "next-auth/providers/discord";
+import EmailProvider from "next-auth/providers/email";
 
-import { env } from "~/env";
 import { db } from "~/server/db";
 
 /**
@@ -49,9 +48,26 @@ export const authOptions: NextAuthOptions = {
   },
   adapter: PrismaAdapter(db) as Adapter,
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
+    EmailProvider({
+      server: {
+        host: process.env.EMAIL_SERVER ?? 'https://localhost:3000',
+        port: 587,
+        auth: {
+          user: process.env.EMAIL_SERVER_USER ?? 'apikey',
+          pass: process.env.EMAIL_SERVER_PASSWORD ?? '',
+        },
+      },
+      from: process.env.EMAIL_FROM ?? 'default@default.com',
+      maxAge: 24 * 60 * 60,
+      ...(process.env.NODE_ENV !== "production" 
+        ? {
+          sendVerificationRequest: ({ identifier: email, url, token, provider }) => {
+            console.log("Sending email to:", email);
+            console.log("Link:", url);
+            console.log("Token:", token);
+            console.log("Provider:", provider);
+          },
+        } : {}),
     }),
     /**
      * ...add more providers here.
