@@ -20,7 +20,11 @@ export const taskRouter = createTRPCRouter({
         });
     }),
 
-    deleteTask: protectedProcedure.mutation(async ({ ctx, input }) => {
+    deleteTask: protectedProcedure.input(
+        z.string({
+            required_error: 'Task ID is required',
+        }),
+    ).mutation(async ({ ctx, input }) => {
         return ctx.db.task.delete({
             where: {
                 id: input,
